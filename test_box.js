@@ -1,9 +1,3 @@
-/*
-According to the debugging, my results seem acceptable.
-However, there might be a syntax error that I missed for the requested output
-and I can't see the instructions again so I'm stuck
-*/
-
 function rec(clawPos, boxes, boxInClaw, ideal_nb_box_per_pos, instructions) {
     var boxes_correctly_placed = are_boxes_correctly_placed(boxes, ideal_nb_box_per_pos);
     if (!boxes_correctly_placed || boxInClaw) {
