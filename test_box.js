@@ -5,32 +5,34 @@ and I can't see the instructions again so I'm stuck
 */
 
 function rec(clawPos, boxes, boxInClaw, ideal_nb_box_per_pos, instructions) {
-    var all_pos_have_same_nb_boxes = are_boxes_equal(boxes, ideal_nb_box_per_pos);
-    if (!all_pos_have_same_nb_boxes) {
+    var boxes_correctly_placed = are_boxes_correctly_placed(boxes, ideal_nb_box_per_pos);
+    if (!boxes_correctly_placed || boxInClaw) {
         // Actions
         if (boxInClaw) {
-            if (boxes[clawPos] < ideal_nb_box_per_pos) {
-                // PLACE
+            var pos_min_boxes = minIndex(boxes);
+            if (boxes[clawPos] == boxes[pos_min_boxes]) {
+                // Place a box
                 instructions += '|PLACE';
                 boxInClaw = false;
                 boxes[clawPos] += 1;
             } else {
                 // Move to place a box
-                var placeDirection = moveToPlace(clawPos, boxes, ideal_nb_box_per_pos, instructions);
-                instructions += placeDirection;
-                clawPos = (placeDirection == '|RIGHT') ? clawPos + 1 : clawPos - 1;
+                var direction = pos_min_boxes < clawPos ? '|LEFT' : '|RIGHT';
+                clawPos = pos_min_boxes < clawPos ? clawPos - 1 : clawPos + 1;
+                instructions += direction;
             }
         } else { //No box in claw
-            if (boxes[clawPos] > ideal_nb_box_per_pos) {
-                // PICK
+            var pos_max_boxes = maxIndex(boxes);
+            if (boxes[clawPos] == boxes[pos_max_boxes]) {
+                // Pick a box
                 instructions += '|PICK';
                 boxInClaw = true;
                 boxes[clawPos] -= 1;
             } else {
                 // Move to pick a box
-                var pickDirection = moveToPick(clawPos, boxes, ideal_nb_box_per_pos, instructions);
-                instructions += pickDirection;
-                clawPos = (pickDirection == '|RIGHT') ? clawPos + 1 : clawPos - 1;
+                var direction = pos_max_boxes < clawPos ? '|LEFT' : '|RIGHT';
+                clawPos = pos_max_boxes < clawPos ? clawPos - 1 : clawPos + 1;
+                instructions += direction;
             }
         }
         instructions = rec(clawPos, boxes, boxInClaw, ideal_nb_box_per_pos, instructions);
@@ -38,45 +40,18 @@ function rec(clawPos, boxes, boxInClaw, ideal_nb_box_per_pos, instructions) {
     return instructions;
 }
 
-function are_boxes_equal(boxes, ideal_nb_box_per_pos) {
-    var all_pos_have_same_nb_boxes = true;
-    var n = boxes.length;
-    for (let i=0; i<n; i++) {
-        if (boxes[i] != ideal_nb_box_per_pos) {
-            all_pos_have_same_nb_boxes = false;
-        }
-    }
-    return all_pos_have_same_nb_boxes;
+function are_boxes_correctly_placed(boxes, ideal_nb_box_per_pos) {
+    var boxes_correctly_placed = boxes.reduce((box_correctly_placed, nb_box_in_cell) => ((nb_box_in_cell < ideal_nb_box_per_pos) || (nb_box_in_cell > ideal_nb_box_per_pos + 1)) ? box_correctly_placed && false : box_correctly_placed && true, true);
+    return boxes_correctly_placed;
 }
 
-function moveToPick(clawPos, boxes, ideal_nb_box_per_pos, instructions) {
-    // We suppose that we have no box in the claw
-    var n = boxes.length;
-    // The arm will try to go to the right by default.
-    var pos_to_pick = n;
-    for (let i=0; i<n; i++) {
-        if (boxes[i] > ideal_nb_box_per_pos) {
-            pos_to_pick = i;
-        }
-    }
-    var direction = (pos_to_pick > clawPos) ? '|RIGHT' : '|LEFT';
-    return direction;
+function maxIndex(array) {
+    return array.reduce((i_max, nb_box_in_cell, i, arr) => nb_box_in_cell > arr[i_max] ? i : i_max, 0);
 }
 
-function moveToPlace(clawPos, boxes, ideal_nb_box_per_pos, instructions) {
-    // We suppose that we have a box in the claw
-    var n = boxes.length;
-    // The arm will try to go to the right by default.
-    var pos_to_place = n;
-    for (let i=0; i<n; i++) {
-        if (boxes[i] < ideal_nb_box_per_pos) {
-            pos_to_place = i;
-        }
-    }
-    var direction = (pos_to_place > clawPos) ? '|RIGHT' : '|LEFT';
-    return direction;
+function minIndex(array) {
+    return array.reduce((i_min, nb_box_in_cell, i, arr) => nb_box_in_cell < arr[i_min] ? i : i_min, 0);
 }
-
 
 function solve(clawPos, boxes, boxInClaw) {
     // Write your code here
@@ -84,20 +59,11 @@ function solve(clawPos, boxes, boxInClaw) {
 
     // Initialisation
     var sum_boxes = boxes.reduce((somme, nb_box_in_cell) => somme + nb_box_in_cell);
-    if (boxInClaw) {
-        sum_boxes += 1;
-    }
-    var ideal_nb_box_per_pos = sum_boxes/boxes.length;
+    sum_boxes = boxInClaw ? sum_boxes + 1 : sum_boxes;
+    var ideal_nb_box_per_pos = Math.trunc(sum_boxes/boxes.length);
     var instructions = '';
-
-    console.error("Initial boxes", boxes);
-
     instructions = rec(clawPos, boxes, boxInClaw, ideal_nb_box_per_pos, instructions);
     instructions = instructions.slice(1);
-
-    console.error("clawPos", clawPos);
-    console.error("Boxes", boxes);
-    console.error("boxInClaw", boxInClaw);
     return instructions;
 }
 
